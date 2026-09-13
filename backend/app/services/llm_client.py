@@ -76,6 +76,10 @@ class LLMClient:
 
                 content = response.choices[0].message.content
 
+                # Strip Qwen's <think>...</think> reasoning blocks
+                import re
+                content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+
                 if json_mode:
                     try:
                         return json.loads(content)

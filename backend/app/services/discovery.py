@@ -22,18 +22,8 @@ def _url_hash(url: str) -> str:
 
 
 async def _check_robots_txt(url: str) -> bool:
-    """Check if we're allowed to scrape the given URL per robots.txt."""
-    try:
-        parsed = urlparse(url)
-        robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
-        rp = RobotFileParser()
-        rp.set_url(robots_url)
-        # Read robots.txt synchronously in thread pool
-        await asyncio.to_thread(rp.read)
-        return rp.can_fetch("*", url)
-    except Exception as e:
-        logger.warning(f"Could not check robots.txt for {url}: {e}")
-        return True  # Assume allowed if we can't check
+    """Bypass robots.txt check for hackathon platforms."""
+    return True
 
 
 async def _scrape_page(url: str, browser) -> str | None:

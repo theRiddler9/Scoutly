@@ -4,10 +4,10 @@ export default function ScoreRing({ score, size = 56 }) {
   const progress = ((score || 0) / 100) * circumference;
 
   const getColor = (s) => {
-    if (s >= 80) return '#69db7c';
-    if (s >= 60) return '#ffd43b';
-    if (s >= 40) return '#ffa94d';
-    return '#ff6b6b';
+    if (s >= 90) return '#20c997'; // Bright Green
+    if (s >= 70) return '#f59f00'; // Yellow-Orange
+    if (s >= 40) return '#f783ac'; // Pink
+    return '#4c6ef5'; // Blue
   };
 
   const color = getColor(score);

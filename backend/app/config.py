@@ -21,7 +21,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # ── LLM Settings ──────────────────────────────────────────────────────────────
-LLM_MODEL = "llama-3.3-70b-versatile"
+LLM_MODEL = "qwen/qwen3.8-27b"
 LLM_TEMPERATURE = 0.2
 LLM_MAX_RETRIES = 3
 LLM_RETRY_BASE_DELAY = 2  # seconds, exponential backoff base
