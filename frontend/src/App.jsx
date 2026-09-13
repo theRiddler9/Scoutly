@@ -26,12 +26,7 @@ export default function App() {
       <footer className="relative z-10 border-t mt-16 py-6 text-center"
               style={{ borderColor: 'rgba(255, 255, 255, 0.04)' }}>
         <p className="text-xs text-gray-500">
-          Built with ❤️ for{' '}
-          <a href="https://anakin.io" target="_blank" rel="noopener noreferrer"
-             className="text-primary-400 hover:text-primary-300 transition-colors">
-            Anakin Forge Hackathon
-          </a>
-          {' '}• Powered by Groq + Llama 3.3
+          Powered by <span className="font-semibold text-gray-400">Qwen</span> & <span className="font-semibold text-gray-400">Playwright</span>
         </p>
       </footer>
     </BrowserRouter>

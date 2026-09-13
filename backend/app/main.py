@@ -4,11 +4,17 @@ Scoutly — FastAPI Application Entry Point
 
 import json
 import logging
+import sys
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+
+# Fix for Playwright NotImplementedError on Windows
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 from app.config import FRONTEND_URL, SCREENSHOTS_DIR
 from app.database import init_db, fetch_one, fetch_all
