@@ -179,16 +179,34 @@ export default function Applications() {
                         <Image className="w-3.5 h-3.5" /> Form Screenshot
                       </h4>
                       {app.screenshot_path ? (
-                        <div className="relative group">
-                          <img
-                            src={applicationsApi.getScreenshot(app.id)}
-                            alt="Filled form screenshot"
-                            className="w-full rounded-xl border cursor-pointer transition-all duration-300 hover:border-primary-500/30"
-                            style={{ borderColor: 'rgba(255,255,255,0.06)' }}
-                            onClick={() => setScreenshotModal(app.id)}
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
-                            <Eye className="w-8 h-8 text-white" />
+                        <div className="space-y-3">
+                          <div className="flex gap-2">
+                            <a
+                              href={applicationsApi.getScreenshot(app.id)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-secondary text-xs px-3 py-1.5 flex-1 justify-center"
+                            >
+                              Open in New Tab
+                            </a>
+                            <a
+                              href={applicationsApi.getScreenshot(app.id)}
+                              download={`screenshot-app-${app.id}.png`}
+                              className="btn-primary text-xs px-3 py-1.5 flex-1 justify-center"
+                            >
+                              Download
+                            </a>
+                          </div>
+                          <div className="relative group cursor-pointer" onClick={() => setScreenshotModal(app.id)}>
+                            <img
+                              src={applicationsApi.getScreenshot(app.id)}
+                              alt="Filled form screenshot"
+                              className="w-full rounded-xl border transition-all duration-300 group-hover:border-primary-500/30"
+                              style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                              <Eye className="w-8 h-8 text-white" />
+                            </div>
                           </div>
                         </div>
                       ) : (
@@ -245,10 +263,27 @@ export default function Applications() {
       {/* Screenshot Modal */}
       {screenshotModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
           onClick={() => setScreenshotModal(null)}
         >
-          <div className="max-w-4xl max-h-[90vh] overflow-auto rounded-2xl" onClick={e => e.stopPropagation()}>
+          <div className="flex gap-4 mb-4" onClick={e => e.stopPropagation()}>
+            <a 
+              href={applicationsApi.getScreenshot(screenshotModal)} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="btn-secondary bg-white/10 hover:bg-white/20 text-white border-0"
+            >
+              Open in New Tab
+            </a>
+            <a 
+              href={applicationsApi.getScreenshot(screenshotModal)} 
+              download={`screenshot-app-${screenshotModal}.png`}
+              className="btn-primary"
+            >
+              Download
+            </a>
+          </div>
+          <div className="max-w-4xl max-h-[80vh] overflow-auto rounded-2xl" onClick={e => e.stopPropagation()}>
             <img
               src={applicationsApi.getScreenshot(screenshotModal)}
               alt="Full form screenshot"

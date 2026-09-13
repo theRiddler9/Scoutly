@@ -107,6 +107,7 @@ async def get_screenshot(application_id: int):
         str(screenshot_path),
         media_type="image/png",
         filename=screenshot_path.name,
+        content_disposition_type="inline"
     )
 
 
