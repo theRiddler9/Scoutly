@@ -60,6 +60,7 @@ class LLMClient:
             "model": self.model,
             "messages": messages,
             "temperature": temperature if temperature is not None else self.temperature,
+            "max_tokens": 800,
         }
 
         if json_mode:
@@ -75,6 +76,10 @@ class LLMClient:
                 )
 
                 content = response.choices[0].message.content
+                
+                # Strip out <think> tags if the model is reasoning
+                import re
+                content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
 
                 if json_mode:
                     try:

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { User, GitBranch, Mail, Code, Briefcase, Plus, Trash2, Save, CheckCircle, Globe, AtSign } from 'lucide-react';
-import { profileApi } from '../services/api';
+import { User, GitBranch, Mail, Code, Briefcase, Plus, X, Save, CheckCircle, Globe, AtSign, RefreshCcw } from 'lucide-react';
+import { profileApi, opportunitiesApi } from '../services/api';
 
 export default function Profile() {
-  const [profile, setProfile] = useState({
+  const emptyProfile = {
     name: '',
     email: '',
     github_url: '',
@@ -11,7 +11,9 @@ export default function Profile() {
     projects: [],
     resume_text: '',
     social_handles: { twitter: '', linkedin: '', website: '' },
-  });
+  };
+
+  const [profile, setProfile] = useState(emptyProfile);
   const [newSkill, setNewSkill] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,21 +37,31 @@ export default function Profile() {
     }
   };
 
-  const saveProfile = async () => {
+  const saveProfile = async (profileToSave = profile) => {
     setSaving(true);
     try {
       if (isNew) {
-        await profileApi.create(profile);
+        await profileApi.create(profileToSave);
         setIsNew(false);
       } else {
-        await profileApi.update(1, profile);
+        await profileApi.update(1, profileToSave);
       }
+      // Re-trigger matching so opportunities update with new profile
+      await opportunitiesApi.triggerMatch({ profile_id: 1 });
+      
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       console.error('Save failed:', err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const clearProfile = async () => {
+    if (confirm('Are you sure you want to clear your profile? This will reset all your details.')) {
+      setProfile(emptyProfile);
+      await saveProfile(emptyProfile);
     }
   };
 
@@ -88,7 +100,7 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="glass-card p-8">
           <div className="skeleton h-8 w-48 mb-6" />
           <div className="space-y-4">
@@ -100,9 +112,9 @@ export default function Profile() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">
             <span className="gradient-text">Your Profile</span>
@@ -111,23 +123,31 @@ export default function Profile() {
             This info powers AI matching & auto-fill
           </p>
         </div>
-        <button
-          onClick={saveProfile}
-          disabled={saving}
-          className={saved ? 'btn-success' : 'btn-primary'}
-        >
-          {saved ? (
-            <>
-              <CheckCircle className="w-4 h-4" /> Saved!
-            </>
-          ) : saving ? (
-            'Saving...'
-          ) : (
-            <>
-              <Save className="w-4 h-4" /> Save Profile
-            </>
-          )}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={clearProfile}
+            className="btn-danger"
+          >
+            <RefreshCcw className="w-4 h-4" /> Clear Profile
+          </button>
+          <button
+            onClick={() => saveProfile(profile)}
+            disabled={saving}
+            className={saved ? 'btn-success' : 'btn-primary'}
+          >
+            {saved ? (
+              <>
+                <CheckCircle className="w-4 h-4" /> Saved!
+              </>
+            ) : saving ? (
+              'Saving & Matching...'
+            ) : (
+              <>
+                <Save className="w-4 h-4" /> Save Profile
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -137,7 +157,7 @@ export default function Profile() {
             <User className="w-5 h-5 text-primary-400" />
             Basic Information
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="input-label">Full Name</label>
               <input
@@ -232,7 +252,7 @@ export default function Profile() {
             <Code className="w-5 h-5 text-primary-400" />
             Skills & Technologies
           </h2>
-          <div className="flex gap-3 mb-4">
+          <div className="flex gap-3 mb-6">
             <input
               type="text"
               className="input-field flex-1"
@@ -245,20 +265,20 @@ export default function Profile() {
               <Plus className="w-4 h-4" /> Add
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             {profile.skills.map((skill, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 group cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 group cursor-pointer"
                 style={{
-                  background: 'rgba(76, 110, 245, 0.1)',
-                  border: '1px solid rgba(76, 110, 245, 0.2)',
-                  color: '#91a7ff',
+                  background: 'rgba(76, 110, 245, 0.15)',
+                  border: '1px solid rgba(76, 110, 245, 0.3)',
+                  color: '#bac8ff',
                 }}
                 onClick={() => removeSkill(skill)}
               >
                 {skill}
-                <Trash2 className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-red-400" />
+                <X className="w-5 h-5 text-red-400 hover:text-red-300" />
               </span>
             ))}
             {profile.skills.length === 0 && (
@@ -278,23 +298,23 @@ export default function Profile() {
               <Plus className="w-4 h-4" /> Add Project
             </button>
           </div>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {profile.projects.map((project, i) => (
               <div
                 key={i}
-                className="p-4 rounded-xl relative group"
+                className="p-5 rounded-2xl relative"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
                 <button
                   onClick={() => removeProject(i)}
-                  className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500/20"
+                  className="absolute top-4 right-4 p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 transition-all border border-red-500/20"
                 >
-                  <Trash2 className="w-4 h-4 text-red-400" />
+                  <X className="w-5 h-5 text-red-400" />
                 </button>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 pr-12">
                   <div>
                     <label className="input-label">Project Title</label>
                     <input
@@ -315,25 +335,25 @@ export default function Profile() {
                       onChange={e => updateProject(i, 'tech_stack', e.target.value)}
                     />
                   </div>
-                </div>
-                <div className="mt-3">
-                  <label className="input-label">Description</label>
-                  <textarea
-                    className="input-field"
-                    rows={3}
-                    placeholder="Describe what this project does..."
-                    value={project.description}
-                    onChange={e => updateProject(i, 'description', e.target.value)}
-                  />
+                  <div>
+                    <label className="input-label">Description</label>
+                    <textarea
+                      className="input-field"
+                      rows={3}
+                      placeholder="Describe what this project does..."
+                      value={project.description}
+                      onChange={e => updateProject(i, 'description', e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
+          </div>
             {profile.projects.length === 0 && (
               <p className="text-gray-500 text-sm text-center py-4">
                 No projects added yet. Add 2-3 projects for better matching.
               </p>
             )}
-          </div>
         </div>
 
         {/* Resume */}
@@ -343,7 +363,7 @@ export default function Profile() {
           </h2>
           <textarea
             className="input-field"
-            rows={6}
+            rows={8}
             placeholder="Paste your resume text, bio, or a brief summary of your experience..."
             value={profile.resume_text}
             onChange={e => setProfile(p => ({ ...p, resume_text: e.target.value }))}

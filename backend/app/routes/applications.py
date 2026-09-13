@@ -67,10 +67,25 @@ async def get_application(application_id: int):
 @router.post("/fill")
 async def fill_form(request: FillRequest):
     """Trigger the form-fill agent for an opportunity. Does NOT submit."""
-    result = await fill_application(
-        opportunity_id=request.opportunity_id,
-        profile_id=request.profile_id,
-    )
+    def _sync_runner():
+        import asyncio
+        import sys
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(
+                fill_application(
+                    opportunity_id=request.opportunity_id,
+                    profile_id=request.profile_id,
+                )
+            )
+        finally:
+            loop.close()
+
+    import asyncio
+    result = await asyncio.to_thread(_sync_runner)
     return result
 
 

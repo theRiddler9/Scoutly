@@ -62,6 +62,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+from fastapi.responses import JSONResponse
+from fastapi import Request
+import traceback
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_msg = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    with open("error_log.txt", "w", encoding="utf-8") as f:
+        f.write(error_msg)
+    return JSONResponse(status_code=500, content={"message": "Internal Server Error", "error": str(exc)})
+
 # CORS
 app.add_middleware(
     CORSMiddleware,

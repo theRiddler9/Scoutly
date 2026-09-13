@@ -25,6 +25,7 @@ export const opportunitiesApi = {
   list: (params = {}) => api.get('/api/opportunities', { params }),
   get: (id, profileId = 1) => api.get(`/api/opportunities/${id}`, { params: { profile_id: profileId } }),
   triggerMatch: (data) => api.post('/api/opportunities/match', data),
+  clearAll: () => api.delete('/api/opportunities/clear'),
 };
 
 // ── Applications ─────────────────────────────────────────────────────────────

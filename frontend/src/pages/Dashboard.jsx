@@ -66,6 +66,17 @@ export default function Dashboard() {
     }
   };
 
+  const clearAll = async () => {
+    if (confirm('Are you sure you want to clear all discovered opportunities? This cannot be undone.')) {
+      try {
+        await opportunitiesApi.clearAll();
+        await loadData();
+      } catch (err) {
+        console.error('Failed to clear opportunities:', err);
+      }
+    }
+  };
+
   const statCards = stats ? [
     {
       label: 'Opportunities Found',
@@ -124,7 +135,13 @@ export default function Dashboard() {
             AI-powered opportunity discovery & auto-application
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={clearAll}
+            className="btn-danger"
+          >
+            Clear All
+          </button>
           <button
             onClick={runDiscovery}
             disabled={discovering}

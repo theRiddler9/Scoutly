@@ -20,7 +20,20 @@ async def trigger_discovery(request: DiscoveryRunRequest = DiscoveryRunRequest()
     if request.source_urls:
         sources = [s.model_dump() for s in request.source_urls]
 
-    result = await run_discovery(source_urls=sources)
+    def _sync_runner(srcs):
+        import asyncio
+        import sys
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(run_discovery(source_urls=srcs))
+        finally:
+            loop.close()
+
+    import asyncio
+    result = await asyncio.to_thread(_sync_runner, sources)
     return result
 
 

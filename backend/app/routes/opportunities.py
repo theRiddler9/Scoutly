@@ -102,3 +102,13 @@ async def trigger_matching(request: MatchTriggerRequest):
         opportunity_ids=request.opportunity_ids,
     )
     return result
+
+@router.delete("/clear")
+async def clear_all_opportunities():
+    """Clear all opportunities, matches, applications, and logs."""
+    from app.database import execute_update
+    await execute_update("DELETE FROM field_logs")
+    await execute_update("DELETE FROM applications")
+    await execute_update("DELETE FROM matches")
+    await execute_update("DELETE FROM opportunities")
+    return {"status": "success", "message": "All opportunities and related data cleared"}
