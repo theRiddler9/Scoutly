@@ -159,7 +159,7 @@ export default function Profile() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="input-label">Full Name</label>
+              <label className="input-label">Full Name <span className="text-red-400">*</span></label>
               <input
                 type="text"
                 className="input-field"
@@ -170,7 +170,7 @@ export default function Profile() {
             </div>
             <div>
               <label className="input-label flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5" /> Email
+                <Mail className="w-3.5 h-3.5" /> Email <span className="text-red-400">*</span>
               </label>
               <input
                 type="email"

@@ -17,7 +17,7 @@ SCREENSHOTS_DIR = os.getenv("SCREENSHOTS_DIR", str(BASE_DIR / "screenshots"))
 Path(SCREENSHOTS_DIR).mkdir(parents=True, exist_ok=True)
 
 # ── API Keys ───────────────────────────────────────────────────────────────────
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+ANAKIN_API_KEY = os.getenv("ANAKIN_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # ── LLM Settings ──────────────────────────────────────────────────────────────

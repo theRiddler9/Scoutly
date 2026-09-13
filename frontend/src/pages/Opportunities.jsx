@@ -159,12 +159,12 @@ export default function Opportunities() {
           {filtered.map((opp, i) => (
             <div
               key={opp.id}
-              className="glass-card overflow-hidden animate-slide-up"
-              style={{ animationDelay: `${Math.min(i, 10) * 0.05}s` }}
+              className="glass-card-interactive overflow-hidden animate-slide-up"
+              style={{ animationDelay: `${Math.min(i, 10) * 0.05}s`, background: expanded === opp.id ? 'rgba(255,255,255,0.02)' : 'var(--glass-bg)' }}
             >
               {/* Main Row */}
               <div
-                className="p-5 flex items-center gap-4 cursor-pointer transition-all duration-200"
+                className="p-5 flex items-center gap-4 transition-all duration-200"
                 onClick={() => setExpanded(expanded === opp.id ? null : opp.id)}
                 style={{ background: expanded === opp.id ? 'rgba(255,255,255,0.02)' : 'transparent' }}
               >

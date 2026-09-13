@@ -1,24 +1,28 @@
 """
-Scoutly — LLM Client (Groq API with retry & backoff)
+Scoutly — LLM Client (Anakin Forge API via OpenAI SDK)
 """
 
 import json
-import time
 import asyncio
 import logging
-from groq import Groq
-from app.config import GROQ_API_KEY, LLM_MODEL, LLM_TEMPERATURE, LLM_MAX_RETRIES, LLM_RETRY_BASE_DELAY
+from openai import AsyncOpenAI
+from app.config import ANAKIN_API_KEY, LLM_MODEL, LLM_TEMPERATURE, LLM_MAX_RETRIES, LLM_RETRY_BASE_DELAY
 
 logger = logging.getLogger(__name__)
 
 
 class LLMClient:
-    """Wrapper around Groq API with exponential backoff retry logic."""
+    """Wrapper around Anakin API using OpenAI SDK with exponential backoff retry logic."""
 
     def __init__(self):
-        if not GROQ_API_KEY:
-            logger.warning("GROQ_API_KEY not set — LLM calls will fail")
-        self.client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+        if not ANAKIN_API_KEY:
+            logger.warning("ANAKIN_API_KEY not set — LLM calls will fail")
+        
+        self.client = AsyncOpenAI(
+            api_key=ANAKIN_API_KEY,
+            base_url="https://api.anakin.ai/v1"
+        ) if ANAKIN_API_KEY else None
+        
         self.model = LLM_MODEL
         self.temperature = LLM_TEMPERATURE
         self.max_retries = LLM_MAX_RETRIES
@@ -44,7 +48,7 @@ class LLMClient:
             Parsed JSON dict if json_mode, else raw string
         """
         if not self.client:
-            raise RuntimeError("LLM client not initialized — set GROQ_API_KEY")
+            raise RuntimeError("LLM client not initialized — set ANAKIN_API_KEY")
 
         if isinstance(user_payload, dict):
             user_content = json.dumps(user_payload, default=str)
@@ -63,6 +67,8 @@ class LLMClient:
             "max_tokens": 800,
         }
 
+        # Some models on Anakin might not fully support response_format strict typing, 
+        # but we'll include it. If it fails, fallback to standard text and extract.
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
 
@@ -70,12 +76,17 @@ class LLMClient:
 
         for attempt in range(self.max_retries):
             try:
-                # Run synchronous Groq call in thread pool
-                response = await asyncio.to_thread(
-                    self.client.chat.completions.create, **kwargs
-                )
-
-                content = response.choices[0].message.content
+                # Async call to Anakin API
+                response = await self.client.chat.completions.create(**kwargs)
+                
+                if hasattr(response, "choices"):
+                    content = response.choices[0].message.content
+                elif isinstance(response, dict) and "choices" in response:
+                    content = response["choices"][0]["message"]["content"]
+                elif isinstance(response, str):
+                    content = response
+                else:
+                    content = str(response)
                 
                 # Strip out <think> tags if the model is reasoning
                 import re
@@ -107,6 +118,11 @@ class LLMClient:
                     await asyncio.sleep(delay)
                 else:
                     logger.error(f"LLM call failed with non-retryable error: {error_str}")
+                    # If JSON mode caused a non-retryable error (e.g. model doesn't support json_object natively)
+                    if json_mode and ("response_format" in error_str or "json" in error_str.lower()):
+                        logger.warning("Model might not support response_format=json_object. Retrying without it.")
+                        kwargs.pop("response_format", None)
+                        continue
                     raise
 
         logger.error(f"LLM call failed after {self.max_retries} retries")

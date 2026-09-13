@@ -118,11 +118,11 @@ export default function Applications() {
       ) : (
         <div className="space-y-3">
           {applications.map((app, i) => (
-            <div key={app.id} className="glass-card overflow-hidden animate-slide-up"
+            <div key={app.id} className="glass-card-interactive overflow-hidden animate-slide-up"
                  style={{ animationDelay: `${Math.min(i, 10) * 0.05}s` }}>
               {/* Main Row */}
               <div
-                className="p-5 flex items-center gap-4 cursor-pointer"
+                className="p-5 flex items-center gap-4"
                 onClick={() => toggleExpand(app.id)}
               >
                 <ScoreRing score={app.match_score} size={48} />

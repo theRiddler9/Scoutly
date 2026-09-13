@@ -8,7 +8,7 @@ export default function StatusBadge({ status }) {
     awaiting_approval: { label: 'Awaiting Approval', className: 'badge-awaiting' },
     approved: { label: 'Approved', className: 'badge-submitted' },
     submitted: { label: 'Submitted', className: 'badge-submitted' },
-    failed: { label: 'Failed', className: 'badge-failed' },
+    failed: { label: 'Manual Action Required', className: 'badge-failed' },
     rejected: { label: 'Rejected', className: 'badge-failed' },
     archived: { label: 'Archived', className: 'badge-found' },
   };

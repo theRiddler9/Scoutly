@@ -87,6 +87,65 @@ screenshots_path = Path(SCREENSHOTS_DIR)
 screenshots_path.mkdir(parents=True, exist_ok=True)
 app.mount("/screenshots", StaticFiles(directory=str(screenshots_path)), name="screenshots")
 
+@app.get("/demo-form")
+async def demo_form():
+    """A dummy hackathon registration form for the demo video (no login required)."""
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>RevenueCat Shipaton 2026 - Registration</title>
+        <style>
+            body { font-family: system-ui, sans-serif; background: #0f111a; color: white; padding: 40px; }
+            .container { max-w-2xl; margin: 0 auto; background: #1a1d27; padding: 30px; border-radius: 12px; }
+            .field { margin-bottom: 20px; }
+            label { display: block; margin-bottom: 8px; font-weight: 500; color: #bac8ff; }
+            input, textarea, select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #2f3342; background: #0f111a; color: white; }
+            button { background: #4c6ef5; color: white; padding: 12px 24px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1 style="color: #bac8ff; margin-bottom: 5px;">RevenueCat Shipaton 2026</h1>
+            <p style="color: #8c9bba; margin-bottom: 30px;">Official Registration Form</p>
+            
+            <form id="apply-form">
+                <div class="field">
+                    <label for="fullName">Full Name *</label>
+                    <input type="text" id="fullName" name="fullName" required>
+                </div>
+                <div class="field">
+                    <label for="emailAddr">Email Address *</label>
+                    <input type="email" id="emailAddr" name="emailAddr" required>
+                </div>
+                <div class="field">
+                    <label for="github">GitHub Profile URL</label>
+                    <input type="url" id="github" name="github">
+                </div>
+                <div class="field">
+                    <label for="skills">Primary Technologies & Skills</label>
+                    <input type="text" id="skills" name="skills" placeholder="e.g. React, Python, AI">
+                </div>
+                <div class="field">
+                    <label for="experience">Why do you want to participate?</label>
+                    <textarea id="experience" name="experience" rows="4"></textarea>
+                </div>
+                <div class="field">
+                    <label for="team">Are you looking for a team?</label>
+                    <select id="team" name="team">
+                        <option value="yes">Yes, I need a team</option>
+                        <option value="no">No, I have a team / Solo</option>
+                    </select>
+                </div>
+                <button type="submit">Submit Application</button>
+            </form>
+        </div>
+    </body>
+    </html>
+    """
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content=html_content)
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 app.include_router(profile.router)
 app.include_router(opportunities.router)
