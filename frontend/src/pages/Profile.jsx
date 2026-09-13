@@ -44,7 +44,17 @@ export default function Profile() {
         await profileApi.create(profileToSave);
         setIsNew(false);
       } else {
-        await profileApi.update(1, profileToSave);
+        try {
+          await profileApi.update(1, profileToSave);
+        } catch (updateErr) {
+          if (updateErr.response?.status === 404) {
+            // If it thinks it's not new but backend says 404, create it instead
+            await profileApi.create(profileToSave);
+            setIsNew(false);
+          } else {
+            throw updateErr;
+          }
+        }
       }
       // Re-trigger matching so opportunities update with new profile
       await opportunitiesApi.triggerMatch({ profile_id: 1 });
@@ -53,6 +63,8 @@ export default function Profile() {
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       console.error('Save failed:', err);
+      const errMsg = err.response?.data?.message || err.response?.data?.detail || err.message;
+      alert(`Failed to save profile: ${errMsg}`);
     } finally {
       setSaving(false);
     }
