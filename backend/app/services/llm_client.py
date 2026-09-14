@@ -49,7 +49,7 @@ class LLMClient:
             Parsed JSON dict if json_mode, else raw string
         """
         if not self.client:
-            raise RuntimeError("LLM client not initialized — set ANAKIN_API_KEY")
+            raise RuntimeError("LLM client not initialized — set GROQ_API_KEY")
 
         if isinstance(user_payload, dict):
             user_content = json.dumps(user_payload, default=str)

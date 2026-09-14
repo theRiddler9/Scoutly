@@ -1,6 +1,12 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://scoutly-e3zr.onrender.com';
+// Empty string = relative requests (e.g. "/api/discovery/run"), which get
+// routed through the Vite dev-server proxy in vite.config.js straight to your
+// local backend on :8000. Previously this defaulted to a deployed Render URL,
+// so every request silently skipped your local backend and hit production
+// instead — which is why things could "work" in code but look dead in the UI.
+// Set VITE_API_URL in a .env file to point at a real deployed backend.
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 
 const api = axios.create({
