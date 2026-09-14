@@ -19,6 +19,20 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isNew, setIsNew] = useState(false);
+  const [loadError, setLoadError] = useState('');
+
+  const normalizeProfile = (value) => ({
+    ...emptyProfile,
+    ...(value && typeof value === 'object' ? value : {}),
+    skills: Array.isArray(value?.skills) ? value.skills : [],
+    projects: Array.isArray(value?.projects) ? value.projects : [],
+    social_handles: {
+      ...emptyProfile.social_handles,
+      ...(value?.social_handles && typeof value.social_handles === 'object'
+        ? value.social_handles
+        : {}),
+    },
+  });
 
   useEffect(() => {
     loadProfile();
@@ -27,10 +41,16 @@ export default function Profile() {
   const loadProfile = async () => {
     try {
       const res = await profileApi.get(1);
-      setProfile(res.data);
+      if (!res.data || typeof res.data !== 'object' || Array.isArray(res.data)) {
+        throw new Error('The profile API returned an invalid response. Check VITE_API_URL.');
+      }
+      setProfile(normalizeProfile(res.data));
     } catch (err) {
       if (err.response?.status === 404) {
         setIsNew(true);
+        setProfile(emptyProfile);
+      } else {
+        setLoadError(err.message || 'Could not load your profile.');
       }
     } finally {
       setLoading(false);
@@ -118,6 +138,18 @@ export default function Profile() {
           <div className="space-y-4">
             {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-12 w-full" />)}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="glass-card p-8 border-red-500/20">
+          <h1 className="text-xl font-semibold text-white mb-2">Profile unavailable</h1>
+          <p className="text-gray-400 text-sm">{loadError}</p>
+          <p className="text-gray-500 text-sm mt-3">For Vercel, set <code>VITE_API_URL</code> to the FastAPI backend URL and redeploy.</p>
         </div>
       </div>
     );

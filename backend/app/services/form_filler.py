@@ -63,6 +63,7 @@ async def _extract_form_fields(page) -> list[dict]:
 
                 fields.push({
                     index: index,
+                    dom_index: index,
                     field_id: id || el.getAttribute('name') || `field_${index}`,
                     tag: el.tagName.toLowerCase(),
                     type: type,
@@ -82,31 +83,30 @@ async def _extract_form_fields(page) -> list[dict]:
 
 async def _fill_field(page, field: dict, value: str, action: str):
     """Fill a single form field using Playwright."""
-    selector = None
-
-    # Build selector
-    if field.get("field_id") and field["field_id"] != f"field_{field.get('index', 0)}":
-        selector = f"#{field['field_id']}"
-    elif field.get("name"):
-        selector = f"[name='{field['name']}']"
-    else:
-        # Fallback to index-based selector
-        tag = field.get("tag", "input")
-        selector = f"{tag}:nth-of-type({field.get('index', 0) + 1})"
-
     try:
-        element = page.locator(selector).first
+        # Use the DOM position from the same selector used during extraction.
+        # This handles duplicated names and IDs containing CSS-special chars.
+        element = page.locator(
+            'input, textarea, select, [contenteditable="true"]'
+        ).nth(field.get("dom_index", field.get("index", 0)))
 
         if action == "fill":
-            if field["tag"] == "textarea" or field["type"] == "text" or field["type"] == "email" or field["type"] == "url" or field["type"] == "tel":
-                await element.fill(value)
-            elif field["type"] == "number":
-                await element.fill(str(value))
+            if field["tag"] == "select":
+                try:
+                    await element.select_option(value=str(value))
+                except Exception:
+                    await element.select_option(label=str(value))
+            elif field["type"] in ("checkbox", "radio"):
+                if str(value).lower() in ("true", "yes", "1"):
+                    await element.check()
             else:
                 await element.fill(value)
 
         elif action == "select":
-            await element.select_option(value=value)
+            try:
+                await element.select_option(value=str(value))
+            except Exception:
+                await element.select_option(label=str(value))
 
         elif action == "check":
             if value.lower() in ("true", "yes", "1"):
@@ -203,8 +203,10 @@ async def fill_application(opportunity_id: int, profile_id: int = 1) -> dict:
             page = await context.new_page()
 
             # Navigate to application form
-            await page.goto(apply_url, wait_until="networkidle", timeout=30000)
-            await page.wait_for_timeout(2000)
+            # Analytics and websocket requests can keep networkidle open
+            # forever even when the form is ready.
+            await page.goto(apply_url, wait_until="domcontentloaded", timeout=30000)
+            await page.wait_for_timeout(1500)
 
             # Extract form fields
             form_fields = await _extract_form_fields(page)
@@ -245,7 +247,9 @@ async def fill_application(opportunity_id: int, profile_id: int = 1) -> dict:
                 json_mode=True,
             )
 
-            field_mappings = llm_result.get("fields", [])
+            field_mappings = llm_result.get("fields", []) if isinstance(llm_result, dict) else []
+            if not isinstance(field_mappings, list):
+                field_mappings = []
             filled_fields = []
 
             # Fill each field
