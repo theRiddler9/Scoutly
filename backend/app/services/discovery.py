@@ -22,8 +22,23 @@ def _url_hash(url: str) -> str:
 
 async def _check_robots_txt(url: str) -> bool:
     """Check if we're allowed to scrape the given URL per robots.txt."""
-    # Bypass robots.txt for Scoutly Hackathon parsing
-    return True
+    try:
+        parsed = urlparse(url)
+        robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
+
+        def _parse():
+            rp = RobotFileParser()
+            rp.set_url(robots_url)
+            rp.read()
+            return rp.can_fetch("*", url)
+
+        # RobotFileParser does blocking network I/O — keep it off the event loop.
+        return await asyncio.to_thread(_parse)
+    except Exception as e:
+        # If robots.txt can't be fetched/parsed, fail open rather than blocking
+        # discovery entirely, but log it so it's visible.
+        logger.warning(f"Could not check robots.txt for {url}: {e}")
+        return True
 
 
 async def _scrape_page(url: str, browser=None) -> str | None:
@@ -44,7 +59,12 @@ async def _scrape_page(url: str, browser=None) -> str | None:
         payload = {
             "url": url,
             "country": "us",
-            "formats": ["markdown", "cleanedHtml"]
+            "formats": ["markdown", "cleanedHtml"],
+            # Devpost/MLH/Devfolio render their listings client-side (React SPAs).
+            # Without useBrowser, Anakin does a plain HTTP fetch and gets back an
+            # empty shell with no opportunity data — the LLM then has nothing to
+            # parse, which is why discovery was silently returning 0 results.
+            "useBrowser": True,
         }
         
         async with httpx.AsyncClient(timeout=30.0) as client:

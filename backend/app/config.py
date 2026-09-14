@@ -39,8 +39,10 @@ DEFAULT_SOURCE_URLS = [
         "type": "devpost"
     },
     {
+        # mlh.io redirects /seasons/current/events to whichever season is active,
+        # so this doesn't go stale every year the way a hardcoded "2025" does.
         "name": "MLH Events",
-        "url": "https://mlh.io/seasons/2025/events",
+        "url": "https://mlh.io/seasons/current/events",
         "type": "mlh"
     },
     {
