@@ -66,10 +66,10 @@ async def _scrape_page(url: str, browser=None) -> str | None:
                 
                 status = result.get("status")
                 if status == "completed":
-                    # Extract the scraped content
-                    content = result.get("data", {}).get("markdown", "")
+                    # Extract the scraped content from top level
+                    content = result.get("markdown", "")
                     if not content:
-                        content = result.get("data", {}).get("cleanedHtml", "")
+                        content = result.get("cleanedHtml", "")
                     if not content:
                         content = str(result)
                         
