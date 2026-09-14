@@ -6,24 +6,25 @@ import json
 import asyncio
 import logging
 from openai import AsyncOpenAI
-from app.config import ANAKIN_API_KEY, LLM_MODEL, LLM_TEMPERATURE, LLM_MAX_RETRIES, LLM_RETRY_BASE_DELAY
+from app.config import GROQ_API_KEY, LLM_MODEL, LLM_TEMPERATURE, LLM_MAX_RETRIES, LLM_RETRY_BASE_DELAY
 
 logger = logging.getLogger(__name__)
 
 
 class LLMClient:
-    """Wrapper around Anakin API using OpenAI SDK with exponential backoff retry logic."""
+    """Wrapper around Groq API using OpenAI SDK with exponential backoff retry logic."""
 
     def __init__(self):
-        if not ANAKIN_API_KEY:
-            logger.warning("ANAKIN_API_KEY not set — LLM calls will fail")
+        if not GROQ_API_KEY:
+            logger.warning("GROQ_API_KEY not set — LLM calls will fail")
         
         self.client = AsyncOpenAI(
-            api_key=ANAKIN_API_KEY,
-            base_url="https://api.anakin.ai/v1"
-        ) if ANAKIN_API_KEY else None
+            api_key=GROQ_API_KEY,
+            base_url="https://api.groq.com/openai/v1"
+        ) if GROQ_API_KEY else None
         
-        self.model = LLM_MODEL
+        # We must use a valid Groq model
+        self.model = "llama-3.3-70b-versatile"
         self.temperature = LLM_TEMPERATURE
         self.max_retries = LLM_MAX_RETRIES
         self.retry_base_delay = LLM_RETRY_BASE_DELAY
@@ -67,8 +68,8 @@ class LLMClient:
             "max_tokens": 4000,
         }
 
-        # We will not use response_format={"type": "json_object"} because some Anakin models 
-        # return empty strings when this is forced. We will rely on prompt engineering and _extract_json.
+        if json_mode:
+            kwargs["response_format"] = {"type": "json_object"}
 
         last_error = None
 

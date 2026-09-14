@@ -18,6 +18,7 @@ Path(SCREENSHOTS_DIR).mkdir(parents=True, exist_ok=True)
 
 # ── API Keys ───────────────────────────────────────────────────────────────────
 ANAKIN_API_KEY = os.getenv("ANAKIN_API_KEY", "")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # ── LLM Settings ──────────────────────────────────────────────────────────────

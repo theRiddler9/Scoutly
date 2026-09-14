@@ -27,38 +27,59 @@ async def _check_robots_txt(url: str) -> bool:
 
 
 async def _scrape_page(url: str, browser=None) -> str | None:
-    """Scrape a page and return its text content using HTTPX (bypasses Render Playwright issues)."""
+    """Scrape a page using Anakin's URL Scraper App."""
     try:
         import httpx
-        import re
+        import asyncio
+        from app.config import ANAKIN_API_KEY
         
-        async with httpx.AsyncClient(follow_redirects=True) as client:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5",
-            }
-            response = await client.get(url, headers=headers, timeout=30.0)
-            response.raise_for_status()
-            html = response.text
+        if not ANAKIN_API_KEY:
+            logger.warning("ANAKIN_API_KEY is not set. Cannot use Anakin scraper.")
+            return None
+
+        headers = {
+            "X-API-Key": ANAKIN_API_KEY,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "url": url,
+            "country": "us",
+            "formats": ["markdown", "cleanedHtml"]
+        }
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # 1) Submit the scrape job
+            submit_resp = await client.post("https://api.anakin.io/v1/url-scraper", headers=headers, json=payload)
+            submit_resp.raise_for_status()
+            job = submit_resp.json()
             
-            # Remove scripts, styles, and noscript
-            html = re.sub(r'<script.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
-            html = re.sub(r'<style.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
-            html = re.sub(r'<noscript.*?</noscript>', '', html, flags=re.DOTALL | re.IGNORECASE)
-            
-            # Extract raw text by stripping HTML tags
-            text = re.sub(r'<[^>]+>', ' ', html)
-            # Clean up whitespace
-            text = re.sub(r'\s+', ' ', text).strip()
-            
-            if len(text) > 15000:
-                text = text[:15000] + "\n\n[... content truncated ...]"
+            job_id = job.get("jobId")
+            if not job_id:
+                logger.error(f"Failed to get jobId from Anakin for {url}: {job}")
+                return None
                 
-            return text
+            # 2) Poll until the job finishes
+            for _ in range(60):
+                poll_resp = await client.get(f"https://api.anakin.io/v1/url-scraper/{job_id}", headers=headers)
+                poll_resp.raise_for_status()
+                result = poll_resp.json()
+                
+                status = result.get("status")
+                if status == "completed":
+                    # Extract the scraped content
+                    # Depending on Anakin's exact response structure, we will serialize it
+                    return str(result)
+                elif status == "failed":
+                    logger.error(f"Anakin scraper failed for {url}: {result}")
+                    return None
+                    
+                await asyncio.sleep(2)
+            
+            logger.error(f"Anakin scraper timed out for {url}")
+            return None
             
     except Exception as e:
-        logger.error(f"Failed to scrape {url} with httpx: {e}")
+        logger.error(f"Failed to scrape {url} with Anakin API: {e}")
         return None
 
 
