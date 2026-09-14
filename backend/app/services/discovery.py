@@ -7,7 +7,6 @@ import asyncio
 import logging
 from urllib.parse import urlparse
 from urllib.robotparser import RobotFileParser
-from playwright.async_api import async_playwright
 from app.config import REQUEST_DELAY_SECONDS, DEFAULT_SOURCE_URLS
 from app.database import fetch_all, fetch_one, execute_insert, get_db
 from app.services.llm_client import llm_client
@@ -27,44 +26,39 @@ async def _check_robots_txt(url: str) -> bool:
     return True
 
 
-async def _scrape_page(url: str, browser) -> str | None:
-    """Scrape a page and return its text content."""
+async def _scrape_page(url: str, browser=None) -> str | None:
+    """Scrape a page and return its text content using HTTPX (bypasses Render Playwright issues)."""
     try:
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                       "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        )
-        page = await context.new_page()
-        await page.goto(url, wait_until="networkidle", timeout=30000)
-
-        # Wait a bit for dynamic content
-        await page.wait_for_timeout(2000)
-
-        # Extract text content
-        text_content = await page.evaluate("""
-            () => {
-                // Remove script and style elements
-                const scripts = document.querySelectorAll('script, style, noscript');
-                scripts.forEach(s => s.remove());
-
-                // Get main content area if available
-                const main = document.querySelector('main, [role="main"], .content, #content, .main');
-                if (main) return main.innerText;
-
-                return document.body.innerText;
+        import httpx
+        import re
+        
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.5",
             }
-        """)
-
-        await context.close()
-
-        # Truncate very long pages to avoid token limits
-        if len(text_content) > 15000:
-            text_content = text_content[:15000] + "\n\n[... content truncated ...]"
-
-        return text_content
-
+            response = await client.get(url, headers=headers, timeout=30.0)
+            response.raise_for_status()
+            html = response.text
+            
+            # Remove scripts, styles, and noscript
+            html = re.sub(r'<script.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+            html = re.sub(r'<style.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
+            html = re.sub(r'<noscript.*?</noscript>', '', html, flags=re.DOTALL | re.IGNORECASE)
+            
+            # Extract raw text by stripping HTML tags
+            text = re.sub(r'<[^>]+>', ' ', html)
+            # Clean up whitespace
+            text = re.sub(r'\s+', ' ', text).strip()
+            
+            if len(text) > 15000:
+                text = text[:15000] + "\n\n[... content truncated ...]"
+                
+            return text
+            
     except Exception as e:
-        logger.error(f"Failed to scrape {url}: {e}")
+        logger.error(f"Failed to scrape {url} with httpx: {e}")
         return None
 
 
@@ -143,7 +137,7 @@ async def _store_opportunity(opp: dict, source_url: str) -> int | None:
 async def run_discovery(source_urls: list[dict] | None = None) -> dict:
     """
     Run the full discovery pipeline:
-    1. Visit each source URL with Playwright
+    1. Visit each source URL with httpx
     2. Parse page text with LLM
     3. Deduplicate and store new opportunities
 
@@ -154,45 +148,40 @@ async def run_discovery(source_urls: list[dict] | None = None) -> dict:
     new_count = 0
     errors = []
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+    for source in sources:
+        url = source["url"] if isinstance(source, dict) else source
+        name = source.get("name", url) if isinstance(source, dict) else url
 
-        for source in sources:
-            url = source["url"] if isinstance(source, dict) else source
-            name = source.get("name", url) if isinstance(source, dict) else url
+        logger.info(f"Discovering opportunities from: {name} ({url})")
 
-            logger.info(f"Discovering opportunities from: {name} ({url})")
+        # Check robots.txt
+        allowed = await _check_robots_txt(url)
+        if not allowed:
+            msg = f"Blocked by robots.txt: {url}"
+            logger.warning(msg)
+            errors.append(msg)
+            continue
 
-            # Check robots.txt
-            allowed = await _check_robots_txt(url)
-            if not allowed:
-                msg = f"Blocked by robots.txt: {url}"
-                logger.warning(msg)
-                errors.append(msg)
-                continue
+        # Scrape page
+        page_text = await _scrape_page(url)
+        if not page_text:
+            errors.append(f"Failed to scrape: {url}")
+            continue
 
-            # Scrape page
-            page_text = await _scrape_page(url, browser)
-            if not page_text:
-                errors.append(f"Failed to scrape: {url}")
-                continue
+        total_scraped += 1
 
-            total_scraped += 1
+        # Parse with LLM
+        opportunities = await _parse_opportunities_with_llm(page_text, url)
+        logger.info(f"Found {len(opportunities)} opportunities from {name}")
 
-            # Parse with LLM
-            opportunities = await _parse_opportunities_with_llm(page_text, url)
-            logger.info(f"Found {len(opportunities)} opportunities from {name}")
+        # Store each opportunity
+        for opp in opportunities:
+            row_id = await _store_opportunity(opp, url)
+            if row_id is not None:
+                new_count += 1
 
-            # Store each opportunity
-            for opp in opportunities:
-                row_id = await _store_opportunity(opp, url)
-                if row_id is not None:
-                    new_count += 1
-
-            # Rate limiting delay
-            await asyncio.sleep(REQUEST_DELAY_SECONDS)
-
-        await browser.close()
+        # Rate limiting delay
+        await asyncio.sleep(REQUEST_DELAY_SECONDS)
 
     result = {
         "status": "completed",
