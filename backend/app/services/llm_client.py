@@ -23,8 +23,8 @@ class LLMClient:
             base_url="https://api.groq.com/openai/v1"
         ) if GROQ_API_KEY else None
         
-        # We must use a valid Groq model
-        self.model = "llama-3.3-70b-versatile"
+        # We must use a valid Groq model from the available list
+        self.model = "qwen/qwen3.8-27b"
         self.temperature = LLM_TEMPERATURE
         self.max_retries = LLM_MAX_RETRIES
         self.retry_base_delay = LLM_RETRY_BASE_DELAY
@@ -65,7 +65,7 @@ class LLMClient:
             "model": self.model,
             "messages": messages,
             "temperature": temperature if temperature is not None else self.temperature,
-            "max_tokens": 4000,
+            "max_tokens": 800,
         }
 
         if json_mode:

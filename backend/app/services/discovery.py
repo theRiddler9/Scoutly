@@ -67,8 +67,17 @@ async def _scrape_page(url: str, browser=None) -> str | None:
                 status = result.get("status")
                 if status == "completed":
                     # Extract the scraped content
-                    # Depending on Anakin's exact response structure, we will serialize it
-                    return str(result)
+                    content = result.get("data", {}).get("markdown", "")
+                    if not content:
+                        content = result.get("data", {}).get("cleanedHtml", "")
+                    if not content:
+                        content = str(result)
+                        
+                    # Truncate very long pages to avoid Groq token limits (approx 4000 tokens)
+                    if len(content) > 15000:
+                        content = content[:15000] + "\n\n[... content truncated ...]"
+                        
+                    return content
                 elif status == "failed":
                     logger.error(f"Anakin scraper failed for {url}: {result}")
                     return None
