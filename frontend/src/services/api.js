@@ -6,7 +6,9 @@ import axios from 'axios';
 // so every request silently skipped your local backend and hit production
 // instead — which is why things could "work" in code but look dead in the UI.
 // Set VITE_API_URL in a .env file to point at a real deployed backend.
-const API_BASE = import.meta.env.VITE_API_URL || '';
+// Keep local requests relative so Vite's proxy is used. On Vercel, set
+// VITE_API_URL to the deployed FastAPI backend URL.
+const API_BASE = (import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '');
 
 
 const api = axios.create({
@@ -15,6 +17,21 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+api.interceptors.response.use(
+  (response) => {
+    // A misconfigured Vercel deployment can return index.html with HTTP 200
+    // for an API request. Fail clearly instead of rendering HTML as data.
+    const contentType = response.headers?.['content-type'] || '';
+    if (typeof response.data === 'string' && contentType.includes('text/html')) {
+      const error = new Error('The API returned the frontend page. Set VITE_API_URL to the deployed backend URL.');
+      error.response = response;
+      return Promise.reject(error);
+    }
+    return response;
+  },
+  (error) => Promise.reject(error),
+);
 
 // ── Profile ──────────────────────────────────────────────────────────────────
 
