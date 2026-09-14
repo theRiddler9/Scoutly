@@ -14,7 +14,7 @@
 
 ---
 
-## 🎯 What is Scoutly?
+## What is Scoutly?
 
 Scoutly is an **AI agent** that automates the tedious process of finding and applying to hackathons, grants, and fellowships. It:
 
@@ -27,21 +27,21 @@ Scoutly is an **AI agent** that automates the tedious process of finding and app
 
 ---
 
-## ✨ Features
+## Features
 
 | Feature | Description |
 |---------|-------------|
-| 🔍 **Smart Discovery** | Ultra-fast `httpx` scraping of hackathon platforms with LLM-based content parsing |
-| 🧠 **AI Matching** | Profile-opportunity matching with 0-100 score, reasoning, and gap analysis via Anakin Forge |
-| 🤖 **Form Auto-Fill** | Intelligent form field detection and auto-population from your profile via Playwright |
-| 🛡️ **Human-in-the-Loop** | Screenshot preview & explicit approval before any submission |
-| 📊 **Dashboard** | Real-time status tracking with glassmorphism dark UI |
-| 🔄 **Scheduled Discovery** | APScheduler runs periodic scans to catch new opportunities |
-| 📝 **Full Audit Log** | Every field filled is logged with reasoning for transparency |
+| **Smart Discovery** | Ultra-fast `httpx` scraping of hackathon platforms with LLM-based content parsing |
+| **AI Matching** | Profile-opportunity matching with 0-100 score, reasoning, and gap analysis via Anakin Forge |
+| **Form Auto-Fill** | Intelligent form field detection and auto-population from your profile via Playwright |
+| **Human-in-the-Loop** | Screenshot preview & explicit approval before any submission |
+| **Dashboard** | Real-time status tracking with glassmorphism dark UI |
+| **Scheduled Discovery** | APScheduler runs periodic scans to catch new opportunities |
+| **Full Audit Log** | Every field filled is logged with reasoning for transparency |
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
@@ -67,7 +67,7 @@ Scoutly is an **AI agent** that automates the tedious process of finding and app
 
 ---
 
-## 🚀 Quick Start (Local Demo)
+## Quick Start (Local Demo)
 
 If you are running the app for a video demo, **local execution is highly recommended** to bypass free-tier server limitations for browser automation.
 
@@ -128,7 +128,7 @@ Visit **http://localhost:5173** in your browser.
 
 ---
 
-## 🌍 Production Deployment
+## Production Deployment
 
 ### Backend (Render)
 1. Deploy the `backend` folder as a **Web Service** on Render (Python 3.12).
@@ -147,7 +147,7 @@ Visit **http://localhost:5173** in your browser.
 
 ---
 
-## 📖 Usage Guide
+## Usage Guide
 
 ### Step 1: Create Your Profile
 Navigate to the **Profile** page and fill in:
@@ -182,11 +182,11 @@ On the **Applications** page:
 - Check the field-by-field fill log with reasoning
 - Click **"Approve & Submit"** or **"Manual Action Required"**
 
-> ⚠️ **Scoutly NEVER submits without your explicit approval.**
+> **Scoutly NEVER submits without your explicit approval.**
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
