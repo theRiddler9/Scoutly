@@ -64,13 +64,11 @@ class LLMClient:
             "model": self.model,
             "messages": messages,
             "temperature": temperature if temperature is not None else self.temperature,
-            "max_tokens": 800,
+            "max_tokens": 4000,
         }
 
-        # Some models on Anakin might not fully support response_format strict typing, 
-        # but we'll include it. If it fails, fallback to standard text and extract.
-        if json_mode:
-            kwargs["response_format"] = {"type": "json_object"}
+        # We will not use response_format={"type": "json_object"} because some Anakin models 
+        # return empty strings when this is forced. We will rely on prompt engineering and _extract_json.
 
         last_error = None
 
@@ -91,6 +89,14 @@ class LLMClient:
                 # Strip out <think> tags if the model is reasoning
                 import re
                 content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+
+                # Check for Anakin redirect injection (out of credits or unauthenticated)
+                if "<script>" in content and "anakin.ai" in content:
+                    raise ValueError(
+                        "Anakin API returned an HTML redirect instead of an AI response. "
+                        "Your Anakin account may be out of credits or the API key is invalid. "
+                        "Please check your Anakin billing/dashboard."
+                    )
 
                 if json_mode:
                     try:

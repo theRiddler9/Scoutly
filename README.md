@@ -7,7 +7,7 @@
 *Discover opportunities. Get AI-matched. Auto-fill applications. Stay in control.*
 
 [![Built for Anakin Forge](https://img.shields.io/badge/Built%20for-Anakin%20Forge%20Hackathon-blueviolet?style=for-the-badge)](https://anakin.io)
-[![Powered by Groq](https://img.shields.io/badge/Powered%20by-Groq%20%2B%20Llama%203.3-orange?style=for-the-badge)](https://groq.com)
+[![Powered by Anakin](https://img.shields.io/badge/Powered%20by-Anakin%20API%20%2B%20Qwen-orange?style=for-the-badge)](https://anakin.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 </div>
@@ -18,10 +18,10 @@
 
 Scoutly is an **AI agent** that automates the tedious process of finding and applying to hackathons, grants, and fellowships. It:
 
-1. **Discovers** open opportunities from Devpost, MLH, Devfolio, and custom sources
-2. **Matches** them to your profile using AI reasoning (Groq + Llama 3.3 70B)
-3. **Auto-fills** application forms via browser automation (Playwright)
-4. **Stops before submitting** — you always have final say with screenshot preview
+1. **Discovers** open opportunities from Devpost, MLH, Devfolio, and custom sources using blazing fast HTTP scraping.
+2. **Matches** them to your profile using AI reasoning (Anakin Forge API).
+3. **Auto-fills** application forms via browser automation (Playwright).
+4. **Stops before submitting** — you always have final say with screenshot preview.
 
 > **Built for [Anakin Forge Hackathon](https://anakin.io)** — demonstrating the power of AI agents for real-world automation.
 
@@ -31,9 +31,9 @@ Scoutly is an **AI agent** that automates the tedious process of finding and app
 
 | Feature | Description |
 |---------|-------------|
-| 🔍 **Smart Discovery** | Playwright-powered scraping of hackathon platforms with LLM-based content parsing |
-| 🧠 **AI Matching** | Profile-opportunity matching with 0-100 score, reasoning, and gap analysis |
-| 🤖 **Form Auto-Fill** | Intelligent form field detection and auto-population from your profile |
+| 🔍 **Smart Discovery** | Ultra-fast `httpx` scraping of hackathon platforms with LLM-based content parsing |
+| 🧠 **AI Matching** | Profile-opportunity matching with 0-100 score, reasoning, and gap analysis via Anakin Forge |
+| 🤖 **Form Auto-Fill** | Intelligent form field detection and auto-population from your profile via Playwright |
 | 🛡️ **Human-in-the-Loop** | Screenshot preview & explicit approval before any submission |
 | 📊 **Dashboard** | Real-time status tracking with glassmorphism dark UI |
 | 🔄 **Scheduled Discovery** | APScheduler runs periodic scans to catch new opportunities |
@@ -43,7 +43,7 @@ Scoutly is an **AI agent** that automates the tedious process of finding and app
 
 ## 🏗️ Architecture
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │                    React Dashboard                        │
 │              (Vite + Tailwind v3 + Lucide)               │
@@ -57,23 +57,25 @@ Scoutly is an **AI agent** that automates the tedious process of finding and app
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘ │
 │       │              │             │             │        │
 │  ┌────▼──────────────▼─────────────▼─────────────▼────┐  │
-│  │              Groq LLM (Llama 3.3 70B)              │  │
+│  │              Anakin Forge API (Qwen / Llama)       │  │
 │  └────────────────────────────────────────────────────┘  │
 │  ┌────────────────┐  ┌──────────────────────────────┐    │
-│  │   SQLite DB    │  │  Playwright (Headless Chrome) │    │
+│  │   SQLite DB    │  │  Playwright (Form Filler)    │    │
 │  └────────────────┘  └──────────────────────────────┘    │
 └──────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Local Demo)
+
+If you are running the app for a video demo, **local execution is highly recommended** to bypass free-tier server limitations for browser automation.
 
 ### Prerequisites
 
 - **Python 3.11+**
 - **Node.js 18+**
-- **Groq API Key** (free — [sign up at console.groq.com](https://console.groq.com))
+- **Anakin Forge API Key** 
 
 ### 1. Clone & Setup Backend
 
@@ -93,12 +95,12 @@ source venv/bin/activate
 cd backend
 pip install -r requirements.txt
 
-# Install Playwright browsers
+# Install Playwright browsers (Required for Form Auto-Fill)
 playwright install chromium
 
 # Setup environment variables
 copy .env.example .env
-# Edit .env and add your GROQ_API_KEY
+# Edit .env and add your ANAKIN_API_KEY
 ```
 
 ### 2. Setup Frontend
@@ -108,15 +110,7 @@ cd ../frontend
 npm install
 ```
 
-### 3. Configure API Key
-
-Edit `backend/.env`:
-
-```env
-GROQ_API_KEY=gsk_your_actual_api_key_here
-```
-
-### 4. Run the Application
+### 3. Run the Application
 
 **Terminal 1 — Backend:**
 ```bash
@@ -130,9 +124,26 @@ cd frontend
 npm run dev
 ```
 
-### 5. Open the Dashboard
-
 Visit **http://localhost:5173** in your browser.
+
+---
+
+## 🌍 Production Deployment
+
+### Backend (Render)
+1. Deploy the `backend` folder as a **Web Service** on Render (Python 3.12).
+2. Set the start command to: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+3. Environment Variables:
+   - `ANAKIN_API_KEY`: Your API key
+   - `PLAYWRIGHT_BROWSERS_PATH`: `0`
+4. *Note: Playwright browser launching for the "Auto-Fill" feature requires a Docker deployment on Render to include necessary OS libraries.*
+
+### Frontend (Vercel)
+1. Deploy the `frontend` folder to Vercel.
+2. Build command: `npm run build`
+3. Output directory: `dist`
+4. Environment Variables:
+   - `VITE_API_URL`: Your Render backend URL (e.g. `https://scoutly-xyz.onrender.com`)
 
 ---
 
@@ -148,8 +159,8 @@ Navigate to the **Profile** page and fill in:
 
 ### Step 2: Discover Opportunities
 Click **"Discover"** on the Dashboard to scan configured sources. The AI will:
-- Visit each source URL via headless browser
-- Extract and parse opportunity data with LLM
+- Fetch hackathon pages at lightning speed using HTTPX
+- Extract and parse opportunity data with the Anakin LLM
 - De-duplicate and store new findings
 
 ### Step 3: Match & Rank
@@ -169,38 +180,9 @@ On any opportunity, click **"Auto-Fill"** to:
 On the **Applications** page:
 - View the screenshot of the filled form
 - Check the field-by-field fill log with reasoning
-- Click **"Approve & Submit"** or **"Reject"**
+- Click **"Approve & Submit"** or **"Manual Action Required"**
 
 > ⚠️ **Scoutly NEVER submits without your explicit approval.**
-
----
-
-## 🛡️ Safety & Guardrails
-
-| Guardrail | Implementation |
-|-----------|---------------|
-| **No auto-submit** | Form-filler stops before submit; requires explicit `POST /approve` |
-| **robots.txt** | Checked via `urllib.robotparser` before any scraping |
-| **Rate limiting** | 1.5s delay between requests; exponential backoff on LLM calls |
-| **Full audit trail** | Every field logged with value + reasoning to `field_logs` table |
-| **Error handling** | try/except with 3x retry (exponential backoff) on all Groq calls |
-
----
-
-## 🔌 API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/profile` | POST | Create profile |
-| `/api/profile/{id}` | GET/PUT/DELETE | CRUD profile |
-| `/api/opportunities` | GET | List with match scores |
-| `/api/opportunities/match` | POST | Trigger AI matching |
-| `/api/discovery/run` | POST | Run discovery scan |
-| `/api/applications/fill` | POST | Auto-fill a form |
-| `/api/applications/{id}/screenshot` | GET | Get fill screenshot |
-| `/api/applications/{id}/approve` | POST | Approve & submit |
-| `/api/applications/{id}/field-logs` | GET | View field fill log |
-| `/api/dashboard/stats` | GET | Dashboard statistics |
 
 ---
 
@@ -209,102 +191,11 @@ On the **Applications** page:
 | Component | Technology |
 |-----------|-----------|
 | **Backend** | Python 3.11+, FastAPI, Uvicorn |
-| **LLM** | Groq API (free tier), Llama 3.3 70B Versatile |
-| **Browser Automation** | Playwright (headless Chromium) |
+| **LLM** | Anakin Forge API (`openai` SDK compatible) |
+| **Scraping** | HTTPX (Discovery), Playwright (Form-filling) |
 | **Database** | SQLite with aiosqlite |
-| **Scheduler** | APScheduler |
 | **Frontend** | React 18, Vite, Tailwind CSS v3 |
 | **Icons** | Lucide React |
-| **HTTP Client** | Axios |
-
----
-
-## 🎬 Demo Script
-
-For the hackathon submission demo (2-3 minutes):
-
-1. **Profile Setup** (30s) — Show the profile form, fill in sample data
-2. **Discovery** (30s) — Click Discover, watch opportunities populate
-3. **Matching** (30s) — Click Match All, show scores and AI reasoning
-4. **Auto-Fill** (45s) — Pick a top opportunity, click Auto-Fill, show the filled form screenshot
-5. **Approval** (15s) — Review field logs, approve submission
-6. **Confirmation** (15s) — Show the submitted status in the dashboard
-
----
-
-## 🗺️ Next Steps / Roadmap
-
-### Short Term
-- [ ] **Gemini API Fallback** — Auto-switch to Gemini 2.0 Flash when Groq rate limit is hit
-- [ ] **Resume PDF Upload** — Parse uploaded PDFs with text extraction
-- [ ] **Email Notifications** — Send alerts for new high-match opportunities
-- [ ] **Multi-Profile Support** — Support multiple user profiles for team applications
-
-### Medium Term
-- [ ] **OAuth Login** — Google/GitHub SSO for user authentication
-- [ ] **Custom Source URLs** — UI to add/remove discovery sources from the dashboard
-- [ ] **Batch Auto-Fill** — Fill multiple applications in one click
-- [ ] **Application Templates** — Save and reuse field mappings for similar forms
-- [ ] **Chrome Extension** — Browser extension for one-click "Scout this page"
-
-### Long Term
-- [ ] **Calendar Integration** — Sync deadlines to Google Calendar
-- [ ] **Team Matching** — Find teammates based on complementary skills
-- [ ] **Follow-Up Tracker** — Track post-submission status and interview scheduling
-- [ ] **Analytics Dashboard** — Conversion rates, response rates, best-matching categories
-- [ ] **Self-Hosted LLM** — Option to run with a local LLM (Ollama/vLLM) for privacy
-
----
-
-## Project Structure
-
-```
-Scoutly/
-├── backend/
-│   ├── app/
-│   │   ├── main.py              # FastAPI entry point
-│   │   ├── config.py            # Settings & env vars
-│   │   ├── database.py          # SQLite schema & helpers
-│   │   ├── models.py            # Pydantic schemas
-│   │   ├── routes/              # API endpoints
-│   │   │   ├── profile.py
-│   │   │   ├── opportunities.py
-│   │   │   ├── applications.py
-│   │   │   └── discovery.py
-│   │   ├── services/            # Business logic
-│   │   │   ├── llm_client.py    # Groq wrapper + retry
-│   │   │   ├── discovery.py     # Web scraping
-│   │   │   ├── matcher.py       # AI matching
-│   │   │   ├── form_filler.py   # Form auto-fill
-│   │   │   └── scheduler.py     # APScheduler
-│   │   └── prompts/             # LLM system prompts
-│   │       ├── parse_opportunity.py
-│   │       ├── match_profile.py
-│   │       └── fill_form.py
-│   ├── requirements.txt
-│   └── .env.example
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   ├── index.css            # Global styles
-│   │   ├── components/
-│   │   │   ├── Navbar.jsx
-│   │   │   ├── StatusBadge.jsx
-│   │   │   └── ScoreRing.jsx
-│   │   ├── pages/
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── Profile.jsx
-│   │   │   ├── Opportunities.jsx
-│   │   │   └── Applications.jsx
-│   │   └── services/
-│   │       └── api.js
-│   ├── tailwind.config.js
-│   └── package.json
-├── screenshots/                 # Auto-filled form screenshots
-├── README.md
-└── .gitignore
-```
 
 ---
 
